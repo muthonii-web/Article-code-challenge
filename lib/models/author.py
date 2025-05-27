@@ -1,11 +1,9 @@
 from lib.db.connection import get_connection
 
-class Article:
-    def __init__(self, title, magazine_id, author_id, id = None):
+class Author:
+    def __init__(self, name, id = None):
       self.id = id
-      self.title = title
-      self.magazine_id = magazine_id
-      self.author_id = author_id
+      self.name = name
     
     def save (self):
        conn = get_connection()
@@ -13,30 +11,53 @@ class Article:
 
        if self.id:
           cursor.execute(
-            cursor.execute(
-             "UPDATE articles SET title = ?, magazine_id = ?, author_id = ? WHERE id = ?",
-                (self.title, self.magazine_id, self.author_id, self.id)
-)
-
+             "UPDATE authors SET name = ? WHERE id = ?",
+                (self.name, self.id)
           )
 
        else:
           cursor.execute(
-              "INSERT INTO articles (title, magazine_id, author_id) VALUES (?, ?, ?)",
-                (self.title, self.magazine_id, self.author_id)
+              "INSERT INTO authors (name) VALUES (?)",
+                (self.name,)
             )
        self.id = cursor.lastrowid
 
        conn.commit()
        conn.close()
 
-    @classmethod
-    def find_by_id(cls, id):
-        """Finds article by ID"""
+    def articles(self):
+       """Returns all articles by this author"""
+       conn = get_connection()
+       cursor = conn.cursor()
+       cursor.execute(
+            "SELECT * FROM articles WHERE author_id = ?",
+            (self.id,)
+        )
+       articles = cursor.fetchall()
+       conn.close()
+       return articles
+    
+    def magazines(self):
+        """Returns unique magazines this author has written for"""
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM articles WHERE id = ?",
+            """SELECT DISTINCT magazines.* FROM magazines
+            JOIN articles ON magazines.id = articles.magazine_id
+            WHERE articles.author_id = ?""",
+            (self.id,)
+        )
+        magazines = cursor.fetchall()
+        conn.close()
+        return magazines
+    
+    @classmethod
+    def find_by_id(cls, id):
+        """Finds author by ID"""
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM authors WHERE id = ?",
             (id,)
         )
         row = cursor.fetchone()
@@ -44,33 +65,23 @@ class Article:
         return cls(**row) if row else None
     
     @classmethod
-    def find_by_title(cls, title):
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM articles WHERE title = ?", (title,))
-        row = cursor.fetchone()
-        conn.close()
-        return cls(**row) if row else None
-   
+    def find_by_name(cls, name):
+       conn = get_connection()
+       cursor = conn.cursor()
+       cursor.execute("SELECT * FROM authors WHERE name = ?", (name,))
+       row = cursor.fetchone()
+       conn.close()
+       return cls(**row) if row else None
+
 
     @classmethod
     def all(cls):
-        """Returns all articles"""
+        """Returns all authors"""
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM articles")
-        articles = [cls(**row) for row in cursor.fetchall()]
+        cursor.execute("SELECT * FROM authors")
+        authors = [cls(**row) for row in cursor.fetchall()]
         conn.close()
-        return articles
-
-    def author(self):
-        """Returns the author of this article"""
-        from .author import Author  # Avoid circular imports
-        return Author.find_by_id(self.author_id)
-
-    def magazine(self):
-        """Returns the magazine of this article"""
-        from .magazine import Magazine
-        return Magazine.find_by_id(self.magazine_id)
-
-    ...
+        return authors
+    
+          

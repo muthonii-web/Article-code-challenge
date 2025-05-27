@@ -1,1 +1,1 @@
-from .models import author, article, magazine
+from lib.models import author, article, magazine
