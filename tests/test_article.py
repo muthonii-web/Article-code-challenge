@@ -12,11 +12,11 @@ def test_article_creation(setup_db):
     assert article.id is not None
 
 def test_find_by_title(setup_db):
-    article = Article.find_by_title("AI Transforming the World")
+    article = Article.find_by_title("The Rise of Quantum Computing")
     assert article is not None
-    assert article.title == "AI Transforming the World"
+    assert article.title == "The Rise of Quantum Computing"
 
 def test_article_relationships(setup_db):
-    article = Article.find_by_title("AI Transforming the World")
+    article = Article.find_by_title("The Rise of Quantum Computing")
     assert article.author() is not None
     assert article.magazine() is not None
